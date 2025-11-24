@@ -1,0 +1,3267 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت گروهی حرفه‌ای - Real Time Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-color: #4a76a8;
+            --primary-dark: #3a5a80;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+            --dark-text: #333;
+            --light-text: #fff;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark-text);
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: var(--shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 25px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: calc(100vh - 80px);
+            flex: 1;
+        }
+
+        .sidebar {
+            background: var(--light-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 14px;
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary-color);
+        }
+
+        .groups-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .group-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+            border: 1px solid transparent;
+        }
+
+        .group-item:hover {
+            background: #e3f2fd;
+            transform: translateX(-5px);
+        }
+
+        .group-item.active {
+            background: #e3f2fd;
+            border-color: var(--primary-color);
+        }
+
+        .group-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .group-info {
+            flex: 1;
+        }
+
+        .group-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .group-meta {
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .unread-badge {
+            background: var(--danger-color);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .online-users {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: var(--radius);
+            background: white;
+        }
+
+        .user-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .user-online::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--success-color);
+            border-radius: 50%;
+            bottom: 2px;
+            left: 2px;
+            border: 2px solid white;
+        }
+
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .chat-meta {
+            font-size: 14px;
+            color: var(--secondary-color);
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.03"><rect fill="%234a76a8" width="100" height="100"/></svg>');
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 60vh;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            position: relative;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #dcf8c6, #c5e8a3);
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--primary-color);
+        }
+
+        .message-text {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+        }
+
+        .message-file {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .file-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .file-icon {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .message-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .message-system {
+            text-align: center;
+            color: var(--secondary-color);
+            font-size: 14px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: var(--radius);
+            margin: 20px 0;
+        }
+
+        .message-input-container {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            background: var(--light-bg);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            outline: none;
+            font-size: 15px;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            font-family: inherit;
+            background: white;
+        }
+
+        .btn-icon {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: white;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-icon:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .send-button:hover {
+            background: var(--primary-dark);
+        }
+
+        .send-button:disabled {
+            background: var(--secondary-color);
+            cursor: not-allowed;
+        }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 15px;
+            z-index: 1000;
+            display: none;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .emoji-picker.show {
+            display: grid;
+        }
+
+        .emoji {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            text-align: center;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .emoji:hover {
+            background: var(--light-bg);
+        }
+
+        .file-upload-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .file-upload-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .file-upload-box {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: var(--light-bg);
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .file-preview-container {
+            margin: 15px 0;
+            text-align: right;
+        }
+
+        .selected-file {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--light-bg);
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+        }
+
+        .selected-file i {
+            color: var(--primary-color);
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .login-subtitle {
+            color: var(--secondary-color);
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
+            text-align: right;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        .form-input {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: var(--success-color);
+            color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: var(--danger-color);
+        }
+
+        .notification.info {
+            background: var(--info-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 500px;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--secondary-color);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .group-members {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: var(--radius);
+            background: var(--light-bg);
+        }
+
+        .member-actions {
+            margin-right: auto;
+        }
+
+        /* استایل‌های جدید برای مدیریت کاربران */
+        .admin-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .admin-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .admin-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .user-item-admin {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: var(--radius);
+            background: white;
+            border: 1px solid var(--border-color);
+        }
+
+        .user-actions {
+            margin-right: auto;
+            display: flex;
+            gap: 5px;
+        }
+
+        .available-users {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .available-user-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: var(--radius);
+            background: var(--light-bg);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .available-user-item:hover {
+            background: #e3f2fd;
+        }
+
+        .available-user-item.selected {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .loading-spinner i {
+            font-size: 40px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* استایل‌های جدید برای موبایل */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-group-selector {
+            display: none;
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            margin: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                position: relative;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 85%;
+                height: 100vh;
+                z-index: 1000;
+                background: var(--light-bg);
+                transition: right 0.3s ease;
+                box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+                display: block !important;
+                overflow-y: auto;
+                padding: 70px 20px 20px 20px;
+            }
+
+            .sidebar.active {
+                right: 0;
+            }
+
+            .header {
+                padding: 10px 15px;
+                position: relative;
+                z-index: 1001;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .user-info span {
+                display: none;
+            }
+
+            .btn span {
+                display: none;
+            }
+
+            .btn {
+                padding: 8px 12px;
+            }
+
+            .messages-container {
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .modal-content {
+                padding: 20px;
+                margin: 20px;
+            }
+
+            .admin-controls {
+                flex-direction: column;
+            }
+
+            .emoji-picker {
+                right: 10px;
+                bottom: 70px;
+                max-width: 280px;
+            }
+
+            /* دکمه منو برای موبایل */
+            .mobile-menu-btn {
+                display: flex !important;
+            }
+
+            .mobile-group-selector {
+                display: block;
+            }
+
+            .header-right .btn {
+                padding: 8px;
+            }
+
+            .header-right .btn i {
+                margin: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-right {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .login-box {
+                padding: 20px;
+            }
+
+            .sidebar {
+                width: 90%;
+                right: -90%;
+            }
+
+            .emoji-picker {
+                grid-template-columns: repeat(6, 1fr);
+                max-width: 250px;
+            }
+        }
+    </style>
+
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <div class="login-box">
+            <div class="login-logo">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h1 class="login-title">چت حرفه‌ای</h1>
+            <p class="login-subtitle">ورود به سیستم چت گروهی</p>
+            
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <input type="text" class="form-input" id="loginUsername" placeholder="نام کاربری" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-input" id="loginPassword" placeholder="رمز عبور" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    ورود به سیستم
+                </button>
+            </form>
+            
+            <div style="margin-top: 20px; font-size: 14px; color: var(--secondary-color);">
+                <p>برای تست از اطلاعات زیر استفاده کنید:</p>
+                <p>کاربری: admin | رمز: 1234</p>
+                <p>کاربری: user1 | رمز: 1234</p>
+                <p>کاربری: user2 | رمز: 1234</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="mainApp" style="display: none;">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <i class="fas fa-comments"></i>
+                    چت حرفه‌ای
+                </div>
+                <div class="status">
+                    <div class="status-dot"></div>
+                    <span>آنلاین</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" id="newGroupBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>گروه جدید</span>
+                </button>
+                <button class="btn btn-secondary" id="groupMembersBtn" style="display: none;">
+                    <i class="fas fa-users"></i>
+                    <span>اعضای گروه</span>
+                </button>
+                <button class="btn btn-primary" id="manageUsersBtn" style="display: none;">
+                    <i class="fas fa-user-cog"></i>
+                    <span>مدیریت کاربران</span>
+                </button>
+                <div class="user-info">
+                    <span id="userDisplayName">مدیر سیستم</span>
+                    <div class="user-avatar" id="userAvatar">A</div>
+                </div>
+                <button class="btn btn-secondary" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>خروج</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Group Selector -->
+        <div class="mobile-group-selector" id="mobileGroupSelector">
+            <i class="fas fa-chevron-down"></i>
+            انتخاب گروه
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <div class="sidebar" id="sidebar">
+                <!-- Search -->
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="جستجو در گفتگوها...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+
+                <!-- Groups -->
+                <div class="sidebar-section">
+                    <div class="sidebar-title">
+                        <i class="fas fa-users"></i>
+                        گروه‌ها
+                    </div>
+                    <div class="groups-list" id="groupsList">
+                        <!-- Groups will be loaded here -->
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            در حال بارگذاری گروه‌ها...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Online Users -->
+                <div class="sidebar-section">
+                    <div class="sidebar-title">
+                        <i class="fas fa-circle"></i>
+                        کاربران آنلاین
+                    </div>
+                    <div class="online-users" id="onlineUsers">
+                        <!-- Online users will be loaded here -->
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            در حال بارگذاری کاربران...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Section -->
+                <div class="admin-section" id="adminSection" style="display: none;">
+                    <div class="sidebar-title">
+                        <i class="fas fa-user-shield"></i>
+                        مدیریت کاربران
+                    </div>
+                    <div class="admin-controls">
+                        <button class="btn btn-primary btn-small" id="addUserBtn">
+                            <i class="fas fa-user-plus"></i>
+                            افزودن کاربر
+                        </button>
+                        <button class="btn btn-secondary btn-small" id="bulkAddUsersBtn">
+                            <i class="fas fa-users"></i>
+                            افزودن گروهی
+                        </button>
+                    </div>
+                    <div class="users-list" id="allUsersList">
+                        <!-- All users will be loaded here -->
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            در حال بارگذاری کاربران...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="chat-info">
+                        <div class="group-avatar" id="currentGroupAvatar">گ</div>
+                        <div>
+                            <div class="chat-title" id="currentGroupName">انتخاب گروه</div>
+                            <div class="chat-meta" id="currentGroupMeta">برای شروع یک گروه انتخاب کنید</div>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="btn-icon" id="chatSettingsBtn" style="display: none;">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="messages-container" id="messagesContainer">
+                    <div class="message-system">
+                        <i class="fas fa-info-circle"></i>
+                        برای شروع گفتگو، یک گروه از لیست سمت چپ انتخاب کنید
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="message-input-container">
+                    <div class="input-group">
+                        <button class="btn-icon" id="attachFileBtn">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <textarea class="message-input" id="messageInput" placeholder="برای ارسال پیام ابتدا یک گروه انتخاب کنید..." rows="1" disabled></textarea>
+                        <button class="btn-icon" id="emojiBtn">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        <div class="input-actions">
+                            <button class="send-button" id="sendButton" disabled>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emoji Picker -->
+                <div class="emoji-picker" id="emojiPicker">
+                    <!-- Emojis will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- File Upload Overlay -->
+    <div class="file-upload-overlay" id="fileUploadOverlay">
+        <div class="file-upload-box">
+            <h3 class="modal-title">ارسال فایل</h3>
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>فایل خود را اینجا رها کنید یا برای انتخاب کلیک کنید</p>
+                <p class="file-types">پشتیبانی از: تصاویر, ویدیو, PDF, Word, Excel</p>
+            </div>
+            <input type="file" id="fileInput" style="display: none;" multiple>
+            <div class="file-preview-container" id="filePreviewContainer">
+                <!-- Selected files will be shown here -->
+            </div>
+            <div class="file-actions">
+                <button class="btn btn-secondary" id="cancelUpload">
+                    انصراف
+                </button>
+                <button class="btn btn-primary" id="sendFiles">
+                    <i class="fas fa-paper-plane"></i>
+                    ارسال فایل‌ها
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Members Modal -->
+    <div class="modal" id="groupMembersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">اعضای گروه</h3>
+                <button class="close-modal" id="closeMembersModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="group-members" id="groupMembersList">
+                <!-- Group members will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="addMemberBtn">
+                    <i class="fas fa-user-plus"></i>
+                    افزودن عضو
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal" id="addUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">افزودن کاربر جدید</h3>
+                <button class="close-modal" id="closeAddUserModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label class="form-label">نام کاربری</label>
+                    <input type="text" class="form-input" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">رمز عبور</label>
+                    <input type="password" class="form-input" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">نام کامل</label>
+                    <input type="text" class="form-input" id="newFullName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">آواتار (حرف اول)</label>
+                    <input type="text" class="form-input" id="newAvatar" maxlength="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">نقش</label>
+                    <select class="form-input" id="newUserRole">
+                        <option value="user">کاربر عادی</option>
+                        <option value="admin">مدیر سیستم</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-user-plus"></i>
+                    افزودن کاربر
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Add Users Modal -->
+    <div class="modal" id="bulkAddUsersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">افزودن گروهی کاربران</h3>
+                <button class="close-modal" id="closeBulkAddModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">تعداد کاربران</label>
+                <input type="number" class="form-input" id="userCount" min="1" max="1000" value="10">
+            </div>
+            <div class="form-group">
+                <label class="form-label">پیشوند نام کاربری</label>
+                <input type="text" class="form-input" id="usernamePrefix" value="user">
+            </div>
+            <div class="form-group">
+                <label class="form-label">رمز عبور پیشفرض</label>
+                <input type="text" class="form-input" id="defaultPassword" value="1234">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBulkAdd">
+                    انصراف
+                </button>
+                <button class="btn btn-primary" id="confirmBulkAdd">
+                    <i class="fas fa-users"></i>
+                    ایجاد کاربران
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div class="modal" id="addMemberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">افزودن عضو به گروه</h3>
+                <button class="close-modal" id="closeAddMemberModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="available-users" id="availableUsersList">
+                <!-- Available users will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">عملیات با موفقیت انجام شد</span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>در حال بارگذاری...</p>
+        </div>
+    </div>
+
+    <script>
+        // Real Time Chat Application - Complete Version with File Upload and Emoji
+        class RealTimeChatApp {
+            constructor() {
+                this.supabase = null;
+                this.currentUser = null;
+                this.users = [];
+                this.groups = [];
+                this.messages = [];
+                this.currentGroup = null;
+                this.subscriptions = [];
+                this.groupMembers = [];
+                this.publicGroupId = null;
+                this.isAdmin = false;
+                this.isOnline = true;
+                this.selectedFiles = [];
+                this.emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
+
+                this.initializeApp();
+            }
+
+            async initializeApp() {
+                try {
+                    console.log('🚀 Initializing Chat Application...');
+                    
+                    // ایجاد Supabase client
+                    this.supabase = supabase.createClient(
+                        'https://atichswkxinwqewtpvkr.supabase.co', 
+                        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0aWNoc3dreGlud3Fld3RwdmtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1ODA2NjAsImV4cCI6MjA3NzE1NjY2MH0.UmJ7mQt4bmwIpvlrnp7J1TigQ8JqB09w_0OgcIVCtFA'
+                    );
+                    
+                    // بررسی اتصال
+                    const { data, error } = await this.supabase.from('users').select('count');
+                    if (error) {
+                        console.error('❌ Error connecting to Supabase:', error);
+                        this.showNotification('خطا در اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید.', 'error');
+                        return;
+                    }
+
+                    console.log('✅ Connected to Supabase successfully');
+                    
+                    await this.checkLoginStatus();
+                    this.bindEvents();
+                    this.setupOnlineStatusListener();
+                    this.initializeEmojiPicker();
+                    
+                } catch (error) {
+                    console.error('❌ Error initializing app:', error);
+                    this.showNotification('خطا در اتصال به سرور', 'error');
+                }
+            }
+
+            initializeEmojiPicker() {
+                const emojiPicker = document.getElementById('emojiPicker');
+                this.emojis.forEach(emoji => {
+                    const emojiElement = document.createElement('div');
+                    emojiElement.className = 'emoji';
+                    emojiElement.textContent = emoji;
+                    emojiElement.addEventListener('click', () => {
+                        this.insertEmoji(emoji);
+                    });
+                    emojiPicker.appendChild(emojiElement);
+                });
+            }
+
+            insertEmoji(emoji) {
+                const messageInput = document.getElementById('messageInput');
+                const start = messageInput.selectionStart;
+                const end = messageInput.selectionEnd;
+                const text = messageInput.value;
+                const newText = text.substring(0, start) + emoji + text.substring(end);
+                
+                messageInput.value = newText;
+                messageInput.focus();
+                messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+                
+                // آپدیت ارتفاع textarea
+                messageInput.style.height = 'auto';
+                messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+                
+                this.hideEmojiPicker();
+            }
+
+            showEmojiPicker() {
+                const emojiPicker = document.getElementById('emojiPicker');
+                emojiPicker.classList.add('show');
+            }
+
+            hideEmojiPicker() {
+                const emojiPicker = document.getElementById('emojiPicker');
+                emojiPicker.classList.remove('show');
+            }
+
+            setupOnlineStatusListener() {
+                // بررسی وضعیت آنلاین بودن کاربر
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.showNotification('اتصال اینترنت برقرار شد', 'success');
+                    if (this.currentUser) {
+                        this.setUserOnlineStatus(true);
+                    }
+                });
+
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.showNotification('اتصال اینترنت قطع شد', 'warning');
+                });
+
+                // بررسی دوره‌ای وضعیت آنلاین
+                setInterval(() => {
+                    if (this.currentUser && this.isOnline) {
+                        this.setUserOnlineStatus(true);
+                    }
+                }, 30000);
+            }
+
+            async checkLoginStatus() {
+                const savedUser = localStorage.getItem('chatUser');
+                const savedTime = localStorage.getItem('chatLoginTime');
+                
+                // بررسی انقضای session
+                if (savedUser && savedTime) {
+                    const loginTime = parseInt(savedTime);
+                    const currentTime = new Date().getTime();
+                    
+                    if (currentTime - loginTime > (24 * 60 * 60 * 1000)) {
+                        // Session منقضی شده
+                        localStorage.removeItem('chatUser');
+                        localStorage.removeItem('chatLoginTime');
+                        this.showLoginPage();
+                        return;
+                    }
+                }
+
+                if (savedUser) {
+                    this.currentUser = JSON.parse(savedUser);
+                    this.isAdmin = this.currentUser.role === 'admin';
+                    await this.setUserOnlineStatus(true);
+                    this.showMainApp();
+                    await this.loadInitialData();
+                    this.setupRealtimeSubscriptions();
+                } else {
+                    this.showLoginPage();
+                }
+            }
+
+            async setUserOnlineStatus(online) {
+                if (!this.currentUser) return;
+                
+                try {
+                    const { error } = await this.supabase
+                        .from('users')
+                        .update({ 
+                            online: online,
+                            last_seen: new Date().toISOString()
+                        })
+                        .eq('id', this.currentUser.id);
+
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Error updating online status:', error);
+                }
+            }
+
+            async handleLogin(event) {
+                event.preventDefault();
+                
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value;
+
+                if (!username || !password) {
+                    this.showNotification('لطفاً نام کاربری و رمز عبور را وارد کنید', 'error');
+                    return;
+                }
+
+                try {
+                    this.showLoading(true);
+                    
+                    // بررسی کاربر در دیتابیس
+                    const { data: user, error } = await this.supabase
+                        .from('users')
+                        .select('*')
+                        .eq('username', username)
+                        .eq('password', password)
+                        .single();
+
+                    if (error || !user) {
+                        this.showNotification('نام کاربری یا رمز عبور نادرست است', 'error');
+                        return;
+                    }
+
+                    this.currentUser = user;
+                    this.isAdmin = user.role === 'admin';
+                    
+                    // ذخیره اطلاعات login
+                    localStorage.setItem('chatUser', JSON.stringify(user));
+                    localStorage.setItem('chatLoginTime', new Date().getTime().toString());
+                    
+                    // آپدیت وضعیت آنلاین
+                    await this.setUserOnlineStatus(true);
+                    
+                    this.showMainApp();
+                    await this.loadInitialData();
+                    this.setupRealtimeSubscriptions();
+                    this.showNotification(`خوش آمدید ${user.name}`, 'success');
+
+                } catch (error) {
+                    console.error('Login error:', error);
+                    this.showNotification('خطا در ورود به سیستم', 'error');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            async handleLogout() {
+                if (this.currentUser) {
+                    await this.setUserOnlineStatus(false);
+                }
+
+                // لغو تمام subscription‌ها
+                this.subscriptions.forEach(subscription => {
+                    subscription.unsubscribe();
+                });
+
+                localStorage.removeItem('chatUser');
+                localStorage.removeItem('chatLoginTime');
+                this.currentUser = null;
+                this.isAdmin = false;
+                this.showLoginPage();
+                this.showNotification('شما از سیستم خارج شدید', 'info');
+            }
+
+            async loadInitialData() {
+                this.showLoading(true);
+                try {
+                    await Promise.all([
+                        this.loadUsers(),
+                        this.loadGroups(),
+                        this.ensurePublicGroup()
+                    ]);
+                    console.log('✅ Initial data loaded successfully');
+                } catch (error) {
+                    console.error('❌ Error loading initial data:', error);
+                    this.showNotification('خطا در بارگذاری اطلاعات اولیه', 'error');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            async loadUsers() {
+                try {
+                    const { data: users, error } = await this.supabase
+                        .from('users')
+                        .select('*')
+                        .order('name')
+                        .limit(100);
+
+                    if (error) throw error;
+
+                    this.users = users || [];
+                    this.updateUsersUI();
+                    this.updateAllUsersUI();
+
+                } catch (error) {
+                    console.error('Error loading users:', error);
+                    throw error;
+                }
+            }
+
+            async loadGroups() {
+                try {
+                    const { data: groups, error } = await this.supabase
+                        .from('groups')
+                        .select(`
+                            *,
+                            group_members (
+                                user_id,
+                                users (
+                                    id,
+                                    name,
+                                    avatar,
+                                    online
+                                )
+                            )
+                        `)
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+
+                    if (error) throw error;
+
+                    this.groups = (groups || []).map(group => {
+                        const members = group.group_members || [];
+                        const onlineCount = members.filter(m => m.users?.online).length;
+                        
+                        return {
+                            ...group,
+                            onlineCount,
+                            totalCount: members.length,
+                            unread: 0
+                        };
+                    });
+
+                    this.updateGroupsUI();
+
+                } catch (error) {
+                    console.error('Error loading groups:', error);
+                    throw error;
+                }
+            }
+
+            async ensurePublicGroup() {
+                try {
+                    // بررسی وجود گروه عمومی
+                    const { data: publicGroup, error } = await this.supabase
+                        .from('groups')
+                        .select('*')
+                        .eq('name', 'گروه عمومی')
+                        .single();
+
+                    if (error || !publicGroup) {
+                        // ایجاد گروه عمومی
+                        const { data: newGroup, error: createError } = await this.supabase
+                            .from('groups')
+                            .insert({
+                                name: 'گروه عمومی',
+                                description: 'گروه عمومی برای تمام کاربران',
+                                avatar: 'گ',
+                                created_by: this.currentUser.id,
+                                is_public: true
+                            })
+                            .select()
+                            .single();
+
+                        if (createError) throw createError;
+                        
+                        this.publicGroupId = newGroup.id;
+                        console.log('✅ Public group created:', newGroup.id);
+                    } else {
+                        this.publicGroupId = publicGroup.id;
+                    }
+
+                    // اطمینان از اینکه کاربر فعلی در گروه عمومی عضو است
+                    await this.ensureUserInPublicGroup(this.currentUser.id);
+
+                    // اطمینان از اینکه تمام کاربران در گروه عمومی عضو هستند
+                    await this.addAllUsersToPublicGroup();
+
+                } catch (error) {
+                    console.error('Error ensuring public group:', error);
+                    throw error;
+                }
+            }
+
+            async ensureUserInPublicGroup(userId) {
+                try {
+                    const { data: membership, error } = await this.supabase
+                        .from('group_members')
+                        .select('*')
+                        .eq('group_id', this.publicGroupId)
+                        .eq('user_id', userId)
+                        .single();
+
+                    if (error || !membership) {
+                        const { error: addError } = await this.supabase
+                            .from('group_members')
+                            .insert({
+                                group_id: this.publicGroupId,
+                                user_id: userId
+                            });
+
+                        if (addError) throw addError;
+                    }
+                } catch (error) {
+                    console.error('Error ensuring user in public group:', error);
+                    throw error;
+                }
+            }
+
+            async addAllUsersToPublicGroup() {
+                try {
+                    // دریافت تمام کاربران
+                    const { data: allUsers, error } = await this.supabase
+                        .from('users')
+                        .select('id');
+
+                    if (error) throw error;
+
+                    // بررسی عضویت هر کاربر در گروه عمومی
+                    for (const user of allUsers) {
+                        try {
+                            await this.ensureUserInPublicGroup(user.id);
+                        } catch (error) {
+                            console.error(`Error adding user ${user.id} to public group:`, error);
+                        }
+                    }
+
+                    // بارگذاری مجدد گروه‌ها
+                    await this.loadGroups();
+
+                } catch (error) {
+                    console.error('Error adding all users to public group:', error);
+                    throw error;
+                }
+            }
+
+            async loadGroupMessages(groupId) {
+                try {
+                    console.log('📥 Loading messages for group:', groupId);
+                    
+                    const { data: messages, error } = await this.supabase
+                        .from('messages')
+                        .select(`
+                            *,
+                            users (
+                                id,
+                                name,
+                                avatar
+                            )
+                        `)
+                        .eq('group_id', groupId)
+                        .order('created_at', { ascending: true })
+                        .limit(50);
+
+                    if (error) {
+                        console.error('❌ Error loading messages:', error);
+                        throw error;
+                    }
+
+                    this.messages = messages || [];
+                    console.log(`✅ Loaded ${this.messages.length} messages`);
+                    this.updateMessagesUI();
+
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                    throw error;
+                }
+            }
+
+            async loadGroupMembers(groupId) {
+                try {
+                    const { data: members, error } = await this.supabase
+                        .from('group_members')
+                        .select(`
+                            user_id,
+                            users (
+                                id,
+                                name,
+                                avatar,
+                                online,
+                                role
+                            )
+                        `)
+                        .eq('group_id', groupId);
+
+                    if (error) throw error;
+
+                    this.groupMembers = members || [];
+                    this.updateGroupMembersUI();
+
+                } catch (error) {
+                    console.error('Error loading group members:', error);
+                    throw error;
+                }
+            }
+
+            async sendMessage() {
+                if (!this.currentUser || !this.currentGroup) {
+                    this.showNotification('لطفاً ابتدا یک گروه انتخاب کنید', 'warning');
+                    return;
+                }
+
+                const input = document.getElementById('messageInput');
+                const content = input.value.trim();
+
+                if (!content && this.selectedFiles.length === 0) {
+                    this.showNotification('لطفاً متن پیام را وارد کنید یا فایلی انتخاب کنید', 'warning');
+                    return;
+                }
+
+                if (!this.isOnline) {
+                    this.showNotification('اتصال اینترنت قطع است. پیام ارسال نشد.', 'error');
+                    return;
+                }
+
+                try {
+                    // اگر فایلی انتخاب شده است
+                    if (this.selectedFiles.length > 0) {
+                        await this.uploadFiles(content);
+                    } else {
+                        // ارسال پیام متنی معمولی
+                        console.log('📤 Sending message:', {
+                            group_id: this.currentGroup.id,
+                            user_id: this.currentUser.id,
+                            content: content
+                        });
+
+                        const { data: message, error } = await this.supabase
+                            .from('messages')
+                            .insert({
+                                group_id: this.currentGroup.id,
+                                user_id: this.currentUser.id,
+                                content: content,
+                                message_type: 'text'
+                            })
+                            .select()
+                            .single();
+
+                        if (error) {
+                            console.error('❌ Error sending message:', error);
+                            this.showNotification('خطا در ارسال پیام: ' + error.message, 'error');
+                            return;
+                        }
+
+                        console.log('✅ Message sent successfully:', message);
+                    }
+
+                    // پاک کردن input
+                    input.value = '';
+                    input.style.height = 'auto';
+
+                } catch (error) {
+                    console.error('❌ Error in sendMessage:', error);
+                    this.showNotification('خطا در ارسال پیام', 'error');
+                }
+            }
+
+            async uploadFiles(textContent = '') {
+                if (this.selectedFiles.length === 0) return;
+
+                this.showLoading(true);
+
+                try {
+                    for (const file of this.selectedFiles) {
+                        const fileName = `${Date.now()}_${file.name}`;
+                        const fileType = this.getFileType(file.type);
+                        
+                        // آپلود فایل به Supabase Storage
+                        const { data: uploadData, error: uploadError } = await this.supabase
+                            .storage
+                            .from('chat-files')
+                            .upload(fileName, file);
+
+                        if (uploadError) {
+                            console.error('❌ Error uploading file:', uploadError);
+                            continue;
+                        }
+
+                        // دریافت لینک عمومی فایل
+                        const { data: urlData } = this.supabase
+                            .storage
+                            .from('chat-files')
+                            .getPublicUrl(fileName);
+
+                        // ذخیره اطلاعات فایل در دیتابیس
+                        const { data: message, error } = await this.supabase
+                            .from('messages')
+                            .insert({
+                                group_id: this.currentGroup.id,
+                                user_id: this.currentUser.id,
+                                content: textContent || `فایل: ${file.name}`,
+                                message_type: 'file',
+                                file_name: file.name,
+                                file_url: urlData.publicUrl,
+                                file_type: fileType,
+                                file_size: file.size
+                            })
+                            .select()
+                            .single();
+
+                        if (error) {
+                            console.error('❌ Error saving file message:', error);
+                        } else {
+                            console.log('✅ File message saved:', message);
+                        }
+                    }
+
+                    this.showNotification('فایل‌ها با موفقیت ارسال شدند', 'success');
+                    this.hideFileUpload();
+                    this.selectedFiles = [];
+
+                } catch (error) {
+                    console.error('❌ Error in uploadFiles:', error);
+                    this.showNotification('خطا در آپلود فایل‌ها', 'error');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            getFileType(mimeType) {
+                if (mimeType.startsWith('image/')) return 'image';
+                if (mimeType.startsWith('video/')) return 'video';
+                if (mimeType === 'application/pdf') return 'pdf';
+                if (mimeType.includes('word') || mimeType.includes('document')) return 'document';
+                if (mimeType.includes('excel') || mimeType.includes('sheet')) return 'spreadsheet';
+                return 'other';
+            }
+
+            getFileIcon(fileType) {
+                switch (fileType) {
+                    case 'image': return 'fas fa-image';
+                    case 'video': return 'fas fa-video';
+                    case 'pdf': return 'fas fa-file-pdf';
+                    case 'document': return 'fas fa-file-word';
+                    case 'spreadsheet': return 'fas fa-file-excel';
+                    default: return 'fas fa-file';
+                }
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            handleFileSelect(event) {
+                const files = Array.from(event.target.files);
+                this.selectedFiles = [...this.selectedFiles, ...files];
+                this.updateFilePreview();
+            }
+
+            updateFilePreview() {
+                const container = document.getElementById('filePreviewContainer');
+                container.innerHTML = '';
+
+                this.selectedFiles.forEach((file, index) => {
+                    const fileElement = document.createElement('div');
+                    fileElement.className = 'selected-file';
+                    
+                    const fileType = this.getFileType(file.type);
+                    const fileIcon = this.getFileIcon(fileType);
+                    
+                    fileElement.innerHTML = `
+                        <i class="${fileIcon}"></i>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${this.formatFileSize(file.size)}</div>
+                        </div>
+                        <button type="button" class="btn-icon remove-file" data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+
+                    container.appendChild(fileElement);
+                });
+
+                // اضافه کردن event listener برای دکمه‌های حذف
+                container.querySelectorAll('.remove-file').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = parseInt(e.currentTarget.dataset.index);
+                        this.removeFile(index);
+                    });
+                });
+            }
+
+            removeFile(index) {
+                this.selectedFiles.splice(index, 1);
+                this.updateFilePreview();
+            }
+
+            showFileUpload() {
+                const overlay = document.getElementById('fileUploadOverlay');
+                overlay.classList.add('show');
+            }
+
+            hideFileUpload() {
+                const overlay = document.getElementById('fileUploadOverlay');
+                overlay.classList.remove('show');
+                this.selectedFiles = [];
+                this.updateFilePreview();
+            }
+
+            async handleNewMessageLocally(message) {
+                try {
+                    // ایجاد یک پیام موقت با اطلاعات کاربر فعلی
+                    const tempMessage = {
+                        ...message,
+                        users: {
+                            id: this.currentUser.id,
+                            name: this.currentUser.name,
+                            avatar: this.currentUser.avatar
+                        }
+                    };
+
+                    // اضافه کردن پیام به لیست محلی
+                    this.messages.push(tempMessage);
+                    
+                    // آپدیت UI
+                    this.updateMessagesUI();
+                    
+                    // اسکرول به پایین
+                    const messagesContainer = document.getElementById('messagesContainer');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                    console.log('✅ Message added to local UI');
+
+                } catch (error) {
+                    console.error('Error in handleNewMessageLocally:', error);
+                }
+            }
+
+            setupRealtimeSubscriptions() {
+                console.log('🔔 Setting up real-time subscriptions...');
+
+                // لغو subscription های قبلی
+                this.subscriptions.forEach(subscription => {
+                    subscription.unsubscribe();
+                });
+                this.subscriptions = [];
+
+                // Subscription برای پیام‌های جدید
+                const messagesSubscription = this.supabase
+                    .channel('custom-messages-channel')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'messages'
+                        },
+                        async (payload) => {
+                            console.log('📨 New message received via real-time:', payload);
+                            await this.handleRealtimeMessage(payload.new);
+                        }
+                    )
+                    .subscribe((status) => {
+                        console.log('📡 Messages subscription status:', status);
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Successfully subscribed to messages');
+                        }
+                    });
+
+                // Subscription برای تغییرات کاربران
+                const usersSubscription = this.supabase
+                    .channel('custom-users-channel')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'users'
+                        },
+                        (payload) => {
+                            console.log('👤 User change via real-time:', payload);
+                            this.handleUserChange(payload);
+                        }
+                    )
+                    .subscribe();
+
+                // Subscription برای تغییرات گروه‌ها
+                const groupsSubscription = this.supabase
+                    .channel('custom-groups-channel')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'groups'
+                        },
+                        () => {
+                            console.log('📁 Groups changed, reloading...');
+                            this.loadGroups();
+                        }
+                    )
+                    .subscribe();
+
+                this.subscriptions.push(messagesSubscription, usersSubscription, groupsSubscription);
+                console.log('✅ Real-time subscriptions established');
+            }
+
+            async handleRealtimeMessage(message) {
+                console.log('🔄 Handling real-time message:', message);
+                
+                // اگر پیام مربوط به گروه فعلی است، آن را نمایش دهید
+                if (this.currentGroup && message.group_id === this.currentGroup.id) {
+                    try {
+                        // بررسی تکراری نبودن پیام
+                        const messageExists = this.messages.some(m => m.id === message.id);
+                        if (messageExists) {
+                            console.log('📭 Message already exists, skipping...');
+                            return;
+                        }
+
+                        // دریافت اطلاعات کاربر برای پیام
+                        const { data: user, error } = await this.supabase
+                            .from('users')
+                            .select('id, name, avatar')
+                            .eq('id', message.user_id)
+                            .single();
+
+                        if (error) {
+                            console.error('Error fetching user for message:', error);
+                            return;
+                        }
+
+                        // اضافه کردن اطلاعات کاربر به پیام
+                        const messageWithUser = {
+                            ...message,
+                            users: user
+                        };
+
+                        this.messages.push(messageWithUser);
+                        this.updateMessagesUI();
+                        
+                        // اسکرول به پایین
+                        const messagesContainer = document.getElementById('messagesContainer');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                        console.log('✅ Real-time message added to UI:', messageWithUser);
+
+                    } catch (error) {
+                        console.error('Error in handleRealtimeMessage:', error);
+                    }
+                } else {
+                    console.log('📭 Message not for current group:', {
+                        messageGroup: message.group_id,
+                        currentGroup: this.currentGroup?.id
+                    });
+                }
+            }
+
+            handleUserChange(payload) {
+                if (payload.eventType === 'UPDATE') {
+                    const index = this.users.findIndex(u => u.id === payload.new.id);
+                    if (index !== -1) {
+                        this.users[index] = payload.new;
+                        this.updateUsersUI();
+                        this.updateAllUsersUI();
+                    }
+                } else if (payload.eventType === 'INSERT') {
+                    // کاربر جدید اضافه شده
+                    this.users.push(payload.new);
+                    this.updateUsersUI();
+                    this.updateAllUsersUI();
+                    
+                    // اضافه کردن کاربر جدید به گروه عمومی
+                    if (this.publicGroupId) {
+                        this.addUserToGroup(payload.new.id, this.publicGroupId);
+                    }
+                } else if (payload.eventType === 'DELETE') {
+                    // کاربر حذف شده
+                    this.users = this.users.filter(u => u.id !== payload.old.id);
+                    this.updateUsersUI();
+                    this.updateAllUsersUI();
+                }
+            }
+
+            async createNewGroup() {
+                const name = prompt('نام گروه جدید را وارد کنید:');
+                if (!name) return;
+
+                if (!this.isOnline) {
+                    this.showNotification('اتصال اینترنت قطع است. امکان ایجاد گروه وجود ندارد.', 'error');
+                    return;
+                }
+
+                try {
+                    const { data: group, error } = await this.supabase
+                        .from('groups')
+                        .insert({
+                            name: name,
+                            description: `گروه ${name}`,
+                            avatar: name.charAt(0) || 'گ',
+                            created_by: this.currentUser.id
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    // اضافه کردن کاربر به گروه
+                    const { error: memberError } = await this.supabase
+                        .from('group_members')
+                        .insert({
+                            group_id: group.id,
+                            user_id: this.currentUser.id
+                        });
+
+                    if (memberError) throw memberError;
+
+                    await this.loadGroups();
+                    this.showNotification(`گروه ${name} ایجاد شد`, 'success');
+
+                } catch (error) {
+                    console.error('Error creating group:', error);
+                    this.showNotification('خطا در ایجاد گروه', 'error');
+                }
+            }
+
+            async addUserToGroup(userId, groupId) {
+                try {
+                    const { error } = await this.supabase
+                        .from('group_members')
+                        .insert({
+                            group_id: groupId,
+                            user_id: userId
+                        });
+
+                    if (error) throw error;
+
+                    this.showNotification('کاربر به گروه اضافه شد', 'success');
+                    await this.loadGroupMembers(groupId);
+                    await this.loadGroups();
+
+                } catch (error) {
+                    console.error('Error adding user to group:', error);
+                    this.showNotification('خطا در اضافه کردن کاربر به گروه', 'error');
+                }
+            }
+
+            async removeUserFromGroup(userId, groupId) {
+                try {
+                    const { error } = await this.supabase
+                        .from('group_members')
+                        .delete()
+                        .eq('group_id', groupId)
+                        .eq('user_id', userId);
+
+                    if (error) throw error;
+
+                    this.showNotification('کاربر از گروه حذف شد', 'success');
+                    await this.loadGroupMembers(groupId);
+                    await this.loadGroups();
+
+                } catch (error) {
+                    console.error('Error removing user from group:', error);
+                    this.showNotification('خطا در حذف کاربر از گروه', 'error');
+                }
+            }
+
+            async addNewUser(username, password, fullName, avatar, role = 'user') {
+                try {
+                    // اعتبارسنجی
+                    if (password.length < 4) {
+                        this.showNotification(`رمز عبور باید حداقل 4 کاراکتر باشد`, 'error');
+                        return false;
+                    }
+
+                    // بررسی وجود کاربر با همین نام کاربری
+                    const { data: existingUser, error: checkError } = await this.supabase
+                        .from('users')
+                        .select('id')
+                        .eq('username', username)
+                        .single();
+
+                    if (existingUser) {
+                        this.showNotification('نام کاربری قبلاً استفاده شده است', 'error');
+                        return false;
+                    }
+
+                    // ایجاد کاربر جدید
+                    const { data: newUser, error } = await this.supabase
+                        .from('users')
+                        .insert({
+                            username: username,
+                            password: password,
+                            name: fullName,
+                            avatar: avatar || fullName.charAt(0) || '👤',
+                            role: role,
+                            online: false,
+                            created_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    // اضافه کردن کاربر جدید به گروه عمومی
+                    if (this.publicGroupId) {
+                        await this.addUserToGroup(newUser.id, this.publicGroupId);
+                    }
+
+                    this.showNotification(`کاربر ${fullName} با موفقیت ایجاد شد`, 'success');
+                    return true;
+
+                } catch (error) {
+                    console.error('Error adding new user:', error);
+                    this.showNotification('خطا در ایجاد کاربر جدید', 'error');
+                    return false;
+                }
+            }
+
+            async bulkAddUsers(count, prefix, password) {
+                if (!this.isOnline) {
+                    this.showNotification('اتصال اینترنت قطع است. امکان ایجاد کاربر وجود ندارد.', 'error');
+                    return;
+                }
+
+                this.showLoading(true);
+                
+                const progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                const progressFill = document.createElement('div');
+                progressFill.className = 'progress-fill';
+                progressFill.style.width = '0%';
+                progressBar.appendChild(progressFill);
+                
+                const loadingSpinner = document.querySelector('.loading-spinner');
+                loadingSpinner.appendChild(progressBar);
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (let i = 1; i <= count; i++) {
+                    const username = `${prefix}${i}`;
+                    const fullName = `کاربر ${i}`;
+                    
+                    try {
+                        const success = await this.addNewUser(username, password, fullName, '', 'user');
+                        if (success) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (error) {
+                        errorCount++;
+                    }
+
+                    // آپدیت progress bar
+                    const progress = (i / count) * 100;
+                    progressFill.style.width = `${progress}%`;
+
+                    // اجازه دهید UI آپدیت شود
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+
+                this.showLoading(false);
+                
+                this.showNotification(
+                    `ایجاد کاربران تکمیل شد: ${successCount} موفق, ${errorCount} خطا`,
+                    errorCount === 0 ? 'success' : 'warning'
+                );
+
+                // بارگذاری مجدد کاربران و گروه‌ها
+                await this.loadUsers();
+                await this.loadGroups();
+            }
+
+            async deleteUser(userId) {
+                if (userId === this.currentUser.id) {
+                    this.showNotification('شما نمی‌توانید حساب خود را حذف کنید', 'error');
+                    return;
+                }
+
+                if (!confirm('آیا از حذف این کاربر اطمینان دارید؟')) return;
+
+                if (!this.isOnline) {
+                    this.showNotification('اتصال اینترنت قطع است. امکان حذف کاربر وجود ندارد.', 'error');
+                    return;
+                }
+
+                try {
+                    // حذف کاربر از تمام گروه‌ها
+                    const { error: memberError } = await this.supabase
+                        .from('group_members')
+                        .delete()
+                        .eq('user_id', userId);
+
+                    if (memberError) throw memberError;
+
+                    // حذف پیام‌های کاربر
+                    const { error: messageError } = await this.supabase
+                        .from('messages')
+                        .delete()
+                        .eq('user_id', userId);
+
+                    if (messageError) throw messageError;
+
+                    // حذف کاربر
+                    const { error } = await this.supabase
+                        .from('users')
+                        .delete()
+                        .eq('id', userId);
+
+                    if (error) throw error;
+
+                    await this.loadUsers();
+                    await this.loadGroups();
+                    this.showNotification('کاربر با موفقیت حذف شد', 'success');
+
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    this.showNotification('خطا در حذف کاربر', 'error');
+                }
+            }
+
+            // متدهای UI
+            showLoginPage() {
+                document.getElementById('loginPage').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+                console.log('🔐 Login page shown');
+            }
+
+            showMainApp() {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'flex';
+                if (this.currentUser) {
+                    document.getElementById('userDisplayName').textContent = this.currentUser.name;
+                    document.getElementById('userAvatar').textContent = this.currentUser.avatar || this.currentUser.name.charAt(0);
+                    
+                    // نمایش بخش مدیریت کاربران برای ادمین
+                    if (this.isAdmin) {
+                        document.getElementById('adminSection').style.display = 'block';
+                        document.getElementById('manageUsersBtn').style.display = 'block';
+                    }
+                }
+                console.log('🏠 Main app shown');
+            }
+
+            showLoading(show) {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (show) {
+                    loadingOverlay.classList.add('show');
+                } else {
+                    loadingOverlay.classList.remove('show');
+                    // پاک کردن progress bar
+                    const progressBar = loadingOverlay.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.remove();
+                    }
+                }
+            }
+
+            updateUsersUI() {
+                const onlineUsersContainer = document.getElementById('onlineUsers');
+                onlineUsersContainer.innerHTML = '';
+
+                const onlineUsers = this.users.filter(user => user.online);
+                
+                if (onlineUsers.length === 0) {
+                    onlineUsersContainer.innerHTML = `
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            هیچ کاربر آنلاینی وجود ندارد
+                        </div>
+                    `;
+                    return;
+                }
+                
+                onlineUsers.forEach(user => {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'user-item';
+                    userElement.innerHTML = `
+                        <div class="user-avatar-small user-online">${user.avatar || user.name.charAt(0)}</div>
+                        <div class="user-info">
+                            <div class="user-name">${user.name}</div>
+                            <div class="user-status">آنلاین</div>
+                        </div>
+                    `;
+                    onlineUsersContainer.appendChild(userElement);
+                });
+            }
+
+            updateAllUsersUI() {
+                const allUsersList = document.getElementById('allUsersList');
+                allUsersList.innerHTML = '';
+
+                if (this.users.length === 0) {
+                    allUsersList.innerHTML = `
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            هیچ کاربری وجود ندارد
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.users.forEach(user => {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'user-item-admin';
+                    
+                    userElement.innerHTML = `
+                        <div class="user-avatar-small ${user.online ? 'user-online' : ''}">
+                            ${user.avatar || user.name.charAt(0)}
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">${user.name} (${user.username})</div>
+                            <div class="user-status">${user.online ? 'آنلاین' : 'آفلاین'} • ${user.role === 'admin' ? 'مدیر' : 'کاربر'}</div>
+                        </div>
+                        <div class="user-actions">
+                            ${user.id !== this.currentUser.id ? 
+                                `<button class="btn btn-small btn-danger delete-user" data-user-id="${user.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>` : ''}
+                        </div>
+                    `;
+
+                    allUsersList.appendChild(userElement);
+                });
+
+                // اضافه کردن event listener برای دکمه‌های حذف
+                document.querySelectorAll('.delete-user').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const userId = e.currentTarget.dataset.userId;
+                        this.deleteUser(userId);
+                    });
+                });
+            }
+
+            updateGroupsUI() {
+                const groupsList = document.getElementById('groupsList');
+                groupsList.innerHTML = '';
+
+                if (this.groups.length === 0) {
+                    groupsList.innerHTML = `
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            هیچ گروهی وجود ندارد
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.groups.forEach(group => {
+                    const groupElement = document.createElement('div');
+                    groupElement.className = `group-item ${this.currentGroup && this.currentGroup.id === group.id ? 'active' : ''}`;
+                    groupElement.dataset.groupId = group.id;
+                    
+                    groupElement.innerHTML = `
+                        <div class="group-avatar">${group.avatar || group.name.charAt(0)}</div>
+                        <div class="group-info">
+                            <div class="group-name">${group.name}</div>
+                            <div class="group-meta">${group.totalCount} عضو • ${group.onlineCount} آنلاین</div>
+                        </div>
+                        ${group.unread > 0 ? `<div class="unread-badge">${group.unread}</div>` : ''}
+                    `;
+
+                    groupElement.addEventListener('click', () => {
+                        this.switchGroup(group);
+                        this.hideSidebar();
+                    });
+
+                    groupsList.appendChild(groupElement);
+                });
+            }
+
+            updateMessagesUI() {
+                const messagesContainer = document.getElementById('messagesContainer');
+                
+                // پاک کردن محتوای قبلی
+                while (messagesContainer.firstChild) {
+                    messagesContainer.removeChild(messagesContainer.firstChild);
+                }
+
+                if (this.messages.length === 0) {
+                    messagesContainer.innerHTML = `
+                        <div class="message-system">
+                            <i class="fas fa-info-circle"></i>
+                            هیچ پیامی در این گروه وجود ندارد. اولین نفر باشید که پیام می‌فرستد!
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log(`🔄 Updating UI with ${this.messages.length} messages`);
+
+                this.messages.forEach(message => {
+                    const messageElement = this.createMessageElement(message);
+                    messagesContainer.appendChild(messageElement);
+                });
+
+                const messagesContainerEl = document.getElementById('messagesContainer');
+                messagesContainerEl.scrollTop = messagesContainerEl.scrollHeight;
+            }
+
+            createMessageElement(message) {
+                const messageElement = document.createElement('div');
+                const isSent = message.user_id === this.currentUser.id;
+                
+                const time = new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
+                
+                let contentHTML = '';
+                
+                if (message.message_type === 'file') {
+                    const fileIcon = this.getFileIcon(message.file_type);
+                    const fileSize = this.formatFileSize(message.file_size || 0);
+                    
+                    contentHTML = `
+                        ${message.content ? `<div class="message-text">${this.escapeHtml(message.content)}</div>` : ''}
+                        <div class="message-file">
+                            <div class="file-preview" onclick="window.open('${message.file_url}', '_blank')">
+                                <i class="${fileIcon} file-icon"></i>
+                                <div class="file-info">
+                                    <div class="file-name">${message.file_name}</div>
+                                    <div class="file-size">${fileSize}</div>
+                                </div>
+                                <i class="fas fa-download"></i>
+                            </div>
+                            ${message.file_type === 'image' ? 
+                                `<img src="${message.file_url}" alt="${message.file_name}" class="message-image" onclick="window.open('${message.file_url}', '_blank')">` : ''}
+                        </div>
+                    `;
+                } else {
+                    contentHTML = `
+                        <div class="message-text">${this.escapeHtml(message.content)}</div>
+                    `;
+                }
+
+                messageElement.innerHTML = `
+                    ${!isSent ? `<div class="message-sender">${message.users?.name || 'کاربر'}</div>` : ''}
+                    ${contentHTML}
+                    <div class="message-time">${time}</div>
+                `;
+
+                return messageElement;
+            }
+
+            updateGroupMembersUI() {
+                const groupMembersList = document.getElementById('groupMembersList');
+                groupMembersList.innerHTML = '';
+
+                if (this.groupMembers.length === 0) {
+                    groupMembersList.innerHTML = `
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            هیچ عضوی در این گروه وجود ندارد
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.groupMembers.forEach(member => {
+                    const memberElement = document.createElement('div');
+                    memberElement.className = 'member-item';
+                    
+                    const isCurrentUser = member.user_id === this.currentUser.id;
+                    const isGroupCreator = this.currentGroup && this.currentGroup.created_by === member.user_id;
+                    
+                    memberElement.innerHTML = `
+                        <div class="user-avatar-small ${member.users.online ? 'user-online' : ''}">
+                            ${member.users.avatar || member.users.name.charAt(0)}
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">${member.users.name} ${isGroupCreator ? '(سازنده)' : ''} ${member.users.role === 'admin' ? '👑' : ''}</div>
+                            <div class="user-status">${member.users.online ? 'آنلاین' : 'آفلاین'}</div>
+                        </div>
+                        <div class="member-actions">
+                            ${!isCurrentUser && this.currentGroup && this.currentGroup.created_by === this.currentUser.id ? 
+                                `<button class="btn-icon remove-member" data-user-id="${member.user_id}">
+                                    <i class="fas fa-times"></i>
+                                </button>` : ''}
+                        </div>
+                    `;
+
+                    groupMembersList.appendChild(memberElement);
+                });
+
+                // اضافه کردن event listener برای دکمه‌های حذف
+                document.querySelectorAll('.remove-member').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const userId = e.currentTarget.dataset.userId;
+                        this.removeUserFromGroup(userId, this.currentGroup.id);
+                    });
+                });
+            }
+
+            updateAvailableUsersUI() {
+                const availableUsersList = document.getElementById('availableUsersList');
+                availableUsersList.innerHTML = '';
+
+                // کاربرانی که در گروه نیستند
+                const currentMemberIds = this.groupMembers.map(member => member.user_id);
+                const availableUsers = this.users.filter(user => !currentMemberIds.includes(user.id));
+
+                if (availableUsers.length === 0) {
+                    availableUsersList.innerHTML = `
+                        <div class="message-system" style="margin: 0; padding: 10px;">
+                            همه کاربران در این گروه عضو هستند
+                        </div>
+                    `;
+                    return;
+                }
+
+                availableUsers.forEach(user => {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'available-user-item';
+                    userElement.dataset.userId = user.id;
+                    
+                    userElement.innerHTML = `
+                        <div class="user-avatar-small ${user.online ? 'user-online' : ''}">
+                            ${user.avatar || user.name.charAt(0)}
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">${user.name} (${user.username}) ${user.role === 'admin' ? '👑' : ''}</div>
+                            <div class="user-status">${user.online ? 'آنلاین' : 'آفلاین'}</div>
+                        </div>
+                    `;
+
+                    userElement.addEventListener('click', () => {
+                        this.addUserToGroup(user.id, this.currentGroup.id);
+                        this.hideAddMemberModal();
+                    });
+
+                    availableUsersList.appendChild(userElement);
+                });
+            }
+
+            async switchGroup(group) {
+                this.currentGroup = group;
+                
+                // آپدیت UI
+                document.querySelectorAll('.group-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`[data-group-id="${group.id}"]`).classList.add('active');
+                
+                document.getElementById('currentGroupName').textContent = group.name;
+                document.getElementById('currentGroupAvatar').textContent = group.avatar || group.name.charAt(0);
+                document.getElementById('currentGroupMeta').textContent = `${group.totalCount} عضو • ${group.onlineCount} آنلاین`;
+                
+                // نمایش دکمه اعضای گروه
+                document.getElementById('groupMembersBtn').style.display = 'block';
+                document.getElementById('chatSettingsBtn').style.display = 'block';
+                
+                // فعال کردن input
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('messageInput').placeholder = 'پیام خود را بنویسید...';
+                document.getElementById('sendButton').disabled = false;
+                
+                // بارگذاری پیام‌ها و اعضای گروه
+                this.showLoading(true);
+                try {
+                    await Promise.all([
+                        this.loadGroupMessages(group.id),
+                        this.loadGroupMembers(group.id)
+                    ]);
+                    console.log(`✅ Switched to group: ${group.name}`);
+                } catch (error) {
+                    console.error('Error switching group:', error);
+                    this.showNotification('خطا در بارگذاری گروه', 'error');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            showGroupMembersModal() {
+                const modal = document.getElementById('groupMembersModal');
+                modal.classList.add('show');
+            }
+
+            hideGroupMembersModal() {
+                const modal = document.getElementById('groupMembersModal');
+                modal.classList.remove('show');
+            }
+
+            showAddUserModal() {
+                const modal = document.getElementById('addUserModal');
+                modal.classList.add('show');
+            }
+
+            hideAddUserModal() {
+                const modal = document.getElementById('addUserModal');
+                modal.classList.remove('show');
+                document.getElementById('addUserForm').reset();
+            }
+
+            showBulkAddUsersModal() {
+                const modal = document.getElementById('bulkAddUsersModal');
+                modal.classList.add('show');
+            }
+
+            hideBulkAddUsersModal() {
+                const modal = document.getElementById('bulkAddUsersModal');
+                modal.classList.remove('show');
+            }
+
+            showAddMemberModal() {
+                this.updateAvailableUsersUI();
+                const modal = document.getElementById('addMemberModal');
+                modal.classList.add('show');
+            }
+
+            hideAddMemberModal() {
+                const modal = document.getElementById('addMemberModal');
+                modal.classList.remove('show');
+            }
+
+            // متدهای جدید برای مدیریت نمایش سایدبار در موبایل
+            showSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            hideSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            bindEvents() {
+                // Login form
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    this.handleLogin(e);
+                });
+
+                // Logout
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    this.handleLogout();
+                });
+
+                // New group
+                document.getElementById('newGroupBtn').addEventListener('click', () => {
+                    this.createNewGroup();
+                });
+
+                // Group members
+                document.getElementById('groupMembersBtn').addEventListener('click', () => {
+                    this.showGroupMembersModal();
+                });
+
+                // Add member to group
+                document.getElementById('addMemberBtn').addEventListener('click', () => {
+                    this.showAddMemberModal();
+                });
+
+                // Close modals
+                document.getElementById('closeMembersModal').addEventListener('click', () => {
+                    this.hideGroupMembersModal();
+                });
+
+                document.getElementById('closeAddUserModal').addEventListener('click', () => {
+                    this.hideAddUserModal();
+                });
+
+                document.getElementById('closeBulkAddModal').addEventListener('click', () => {
+                    this.hideBulkAddUsersModal();
+                });
+
+                document.getElementById('closeAddMemberModal').addEventListener('click', () => {
+                    this.hideAddMemberModal();
+                });
+
+                // Add user
+                document.getElementById('addUserBtn').addEventListener('click', () => {
+                    this.showAddUserModal();
+                });
+
+                // Bulk add users
+                document.getElementById('bulkAddUsersBtn').addEventListener('click', () => {
+                    this.showBulkAddUsersModal();
+                });
+
+                // Add user form
+                document.getElementById('addUserForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const username = document.getElementById('newUsername').value.trim();
+                    const password = document.getElementById('newPassword').value;
+                    const fullName = document.getElementById('newFullName').value.trim();
+                    const avatar = document.getElementById('newAvatar').value.trim();
+                    const role = document.getElementById('newUserRole').value;
+                    
+                    if (!username || !password || !fullName) {
+                        this.showNotification('لطفاً تمام فیلدهای ضروری را پر کنید', 'error');
+                        return;
+                    }
+                    
+                    this.addNewUser(username, password, fullName, avatar, role);
+                    this.hideAddUserModal();
+                });
+
+                // Bulk add users
+                document.getElementById('confirmBulkAdd').addEventListener('click', () => {
+                    const count = parseInt(document.getElementById('userCount').value);
+                    const prefix = document.getElementById('usernamePrefix').value.trim();
+                    const password = document.getElementById('defaultPassword').value;
+
+                    if (!prefix) {
+                        this.showNotification('لطفاً پیشوند نام کاربری را وارد کنید', 'error');
+                        return;
+                    }
+
+                    if (count > 1000) {
+                        this.showNotification(`حداکثر تعداد کاربران 1000 است`, 'error');
+                        return;
+                    }
+                    
+                    this.bulkAddUsers(count, prefix, password);
+                    this.hideBulkAddUsersModal();
+                });
+
+                document.getElementById('cancelBulkAdd').addEventListener('click', () => {
+                    this.hideBulkAddUsersModal();
+                });
+
+                // Send message
+                document.getElementById('sendButton').addEventListener('click', () => {
+                    this.sendMessage();
+                });
+
+                document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Auto-resize textarea
+                document.getElementById('messageInput').addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+
+                // Emoji picker
+                document.getElementById('emojiBtn').addEventListener('click', () => {
+                    this.showEmojiPicker();
+                });
+
+                // Close emoji picker when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiBtn')) {
+                        this.hideEmojiPicker();
+                    }
+                });
+
+                // File upload
+                document.getElementById('attachFileBtn').addEventListener('click', () => {
+                    this.showFileUpload();
+                });
+
+                document.getElementById('uploadArea').addEventListener('click', () => {
+                    document.getElementById('fileInput').click();
+                });
+
+                document.getElementById('fileInput').addEventListener('change', (e) => {
+                    this.handleFileSelect(e);
+                });
+
+                // Drag and drop for file upload
+                const uploadArea = document.getElementById('uploadArea');
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--primary-color)';
+                    uploadArea.style.background = 'var(--light-bg)';
+                });
+
+                uploadArea.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--border-color)';
+                    uploadArea.style.background = 'white';
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--border-color)';
+                    uploadArea.style.background = 'white';
+                    
+                    const files = Array.from(e.dataTransfer.files);
+                    this.selectedFiles = [...this.selectedFiles, ...files];
+                    this.updateFilePreview();
+                });
+
+                document.getElementById('cancelUpload').addEventListener('click', () => {
+                    this.hideFileUpload();
+                });
+
+                document.getElementById('sendFiles').addEventListener('click', () => {
+                    const textContent = document.getElementById('messageInput').value.trim();
+                    this.uploadFiles(textContent);
+                });
+
+                // Close modals when clicking outside
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            if (modal.id === 'groupMembersModal') this.hideGroupMembersModal();
+                            if (modal.id === 'addUserModal') this.hideAddUserModal();
+                            if (modal.id === 'bulkAddUsersModal') this.hideBulkAddUsersModal();
+                            if (modal.id === 'addMemberModal') this.hideAddMemberModal();
+                        }
+                    });
+                });
+
+                // Close file upload overlay
+                document.getElementById('fileUploadOverlay').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('fileUploadOverlay')) {
+                        this.hideFileUpload();
+                    }
+                });
+
+                // Search functionality
+                const searchInput = document.querySelector('.search-input');
+                let searchTimeout;
+                searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        const searchTerm = e.target.value.toLowerCase();
+                        this.filterGroups(searchTerm);
+                    }, 300);
+                });
+
+                // Clear search on escape
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        e.target.value = '';
+                        this.filterGroups('');
+                    }
+                });
+
+                // Mobile menu events
+                document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                    this.showSidebar();
+                });
+
+                document.getElementById('mobileGroupSelector').addEventListener('click', () => {
+                    this.showSidebar();
+                });
+
+                document.getElementById('overlay').addEventListener('click', () => {
+                    this.hideSidebar();
+                });
+
+                console.log('✅ All events bound successfully');
+            }
+
+            filterGroups(searchTerm) {
+                const groupItems = document.querySelectorAll('.group-item');
+                let visibleCount = 0;
+                
+                groupItems.forEach(item => {
+                    const groupName = item.querySelector('.group-name').textContent.toLowerCase();
+                    if (groupName.includes(searchTerm)) {
+                        item.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // اگر هیچ نتیجه‌ای پیدا نشد
+                if (visibleCount === 0 && searchTerm) {
+                    const groupsList = document.getElementById('groupsList');
+                    const noResults = document.createElement('div');
+                    noResults.className = 'message-system';
+                    noResults.style.margin = '0';
+                    noResults.style.padding = '10px';
+                    noResults.innerHTML = `هیچ گروهی با "${searchTerm}" یافت نشد`;
+                    
+                    // حذف پیام قبلی اگر وجود دارد
+                    const existingNoResults = groupsList.querySelector('.message-system');
+                    if (existingNoResults) {
+                        existingNoResults.remove();
+                    }
+                    
+                    groupsList.appendChild(noResults);
+                } else {
+                    // حذف پیام عدم وجود نتیجه
+                    const existingNoResults = document.querySelector('#groupsList .message-system');
+                    if (existingNoResults && searchTerm) {
+                        existingNoResults.remove();
+                    }
+                }
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.getElementById('notification');
+                const notificationText = document.getElementById('notificationText');
+                
+                notificationText.textContent = message;
+                notification.className = `notification ${type} show`;
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.chatApp = new RealTimeChatApp();
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', async () => {
+            if (window.chatApp && window.chatApp.currentUser) {
+                await window.chatApp.setUserOnlineStatus(false);
+            }
+        });
+
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (window.chatApp && window.chatApp.currentUser) {
+                if (document.hidden) {
+                    // صفحه مخفی شده - کاربر ممکن است آنلاین نباشد
+                    window.chatApp.setUserOnlineStatus(false);
+                } else {
+                    // صفحه visible شده - کاربر برگشته
+                    window.chatApp.setUserOnlineStatus(true);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
